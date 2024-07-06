@@ -24,7 +24,7 @@ const registerUser = asyncHandler(async (req, res) => {
     }
     
     // check if user already exists: username or email
-    const existedUser = User.findOne({
+    const existedUser = await User.findOne({
         $or: [{ username }, { email }] // this is a or operator that means either username or email
     })
 
@@ -33,7 +33,14 @@ const registerUser = asyncHandler(async (req, res) => {
     }
     // check for images, check for avatar (mandatory)
     const avatarLocalPath = req.files?.avatar[0]?.path;
-    const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    // const coverImageLocalPath = req.files?.coverImage[0]?.path; => this won't work when cover iimage is not uploaded
+
+    // check if cover image is uploaded
+    let coverImageLocalPath;
+    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
+        coverImageLocalPath = req.files.coverImage[0].path;
+    }
+    // console.log("coverImageLocalPath: ", coverImageLocalPath)
 
     if(!avatarLocalPath) {
         throw new ApiError(400, "Avatar is required")
@@ -42,6 +49,7 @@ const registerUser = asyncHandler(async (req, res) => {
     // upload them to cloudinary, check if avatar was uploaded
     const avatar = await uploadOnCloudinary(avatarLocalPath)
     const coverImage = await uploadOnCloudinary(coverImageLocalPath)
+    // console.log("coverImage: ", coverImage)
     
     if(!avatar) {
         throw new ApiError(400, "Avatar upload failed")
@@ -51,11 +59,13 @@ const registerUser = asyncHandler(async (req, res) => {
     const user = await User.create({
         fullname,
         avatar: avatar.url,
-        coverImage: coverImage?.url || "", // cover image is not mandatory so if the user is not uploading cover image then assign an empty string
+        // cover image is not mandatory so if the user is not uploading cover image then assign an empty string
+        coverimage: coverImage?.url || "",
         username: username.toLowerCase(),
         email,
         password
     })
+    // console.log("user coverImage: ", user.coverImage)
 
     // remove password and refresh token field from the response
     const createdUser = await User.findById(user._id).select( // here we are checking if the user is found or not

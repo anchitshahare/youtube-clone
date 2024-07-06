@@ -2,7 +2,7 @@ import mongoose, {Schema} from "mongoose";
 import jwt from 'jsonwebtoken' // jwt is a bearer token so whoever sends me the token I will send them the data
 import bcrypt from 'bcrypt' // used for encrypting password
 
-const userSchema = new userSchema(
+const userSchema = new Schema(
     {
         username: {
             type: String,
